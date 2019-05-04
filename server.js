@@ -134,23 +134,18 @@ function searchToLatLong(request, response) {
 
   getDataFromDB(sqlInfo)
     .then(result => {
-      // console.log('result from Database', result.rowCount);
       // Did the DB return any info?
       if (result.rowCount > 0) {
         response.send(result.rows[0]);
-        console.log('this location is from the DB😍')
       } else {
-        console.log('this is not from DB🤷🏻‍♀️');
         // otherwise go get the data from the API
         const url = `https://maps.googleapis.com/maps/api/geocode/json?address=${request.query.data}&key=${process.env.GEOCODE_API_KEY}`;
-        console.log(url);
 
         superagent.get(url)
           .then(result => {
             if (!result.body.results.length) { throw 'NO DATA'; }
             else {
               let location = new Location(sqlInfo.searchQuery, result.body.results[0]);
-              console.log(location);
 
               sqlInfo.columns = Object.keys(location).join();
               sqlInfo.values = Object.values(location);
@@ -160,7 +155,6 @@ function searchToLatLong(request, response) {
                   // attach the returning id to the location object
                   location.id = data.rows[0].id;
                   response.send(location);
-                  console.log(location);
                 });
             }
           })
@@ -181,14 +175,12 @@ function getWeather(request, response) {
     .then(result => {
       if (result) {
         response.send(results.rows);
-        // console.log('this came from DB');
       } else {
         const url = `https://api.darksky.net/forecast/${process.env.WEATHER_API_KEY}/${request.query.data.latitude},${request.query.data.longitude}`;
         console.log(url);
 
         return superagent.get(url)
           .then(weatherResults => {
-            // console.log('Weather from API');
             if (!weatherResults.body.daily.data.length) { throw 'NO DATA'; }
             else {
               const weatherSummaries = weatherResults.body.daily.data.map(day => {
@@ -222,7 +214,6 @@ function getEvents(request, response) {
     .then(data => checkTimeOuts(sqlInfo, data))
     .then(result => {
       if (result) {
-        console.log('Event from SQL');
         response.send(result.rows);
       } else {
         const url = `https://www.eventbriteapi.com/v3/events/search?token=${process.env.EVENTBRITE_API_KEY}&location.address=${request.query.data.formatted_query}`;
@@ -258,12 +249,10 @@ function getMovies(request, response) {
     id: request.query.id,
     endpoint: 'movie',
   }
-  console.log('we are in the movies fn')
   getDataFromDB(sqlInfo)
     .then(data => checkTimeOuts(sqlInfo, data))
     .then(result => {
       if (result) {
-        console.log('MOVIE from SQL');
         response.send(result.rows);
       } else {
         const url = `https://api.themoviedb.org/3/search/movie?api_key=${process.env.MOVIE_API_KEY}&query=${request.query.data.search_query}&page=1&include_adult=false
@@ -271,7 +260,6 @@ function getMovies(request, response) {
   
         superagent.get(url)
           .then(movieResult => {
-            // console.log('MOVIE from API🎦', movieResult.body, '🎦');
             if (!movieResult.body.results.length) { throw 'NO DATA'; }
             else {
               const movieSummaries = movieResult.body.results.map(movieData => {
@@ -294,7 +282,6 @@ function getMovies(request, response) {
 
 // HELPER: YELP DATA
 function getYelps(request, response) {
-  console.log('made it to yelps');
   let sqlInfo = {
     id: request.query.id,
     endpoint: 'yelp',
@@ -303,14 +290,12 @@ function getYelps(request, response) {
   .then(data => checkTimeOuts(sqlInfo, data))
     .then(result => {
       if (result) {
-        console.log('YELPING from SQL');
         response.send(result.rows);
       } else {
         const url = `https://api.yelp.com/v3/businesses/search?latitude=${request.query.data.latitude}&longitude=${request.query.data.longitude}`;
 
         superagent.get(url).set('Authorization', `Bearer ${process.env.YELP_API_KEY}`).then(yelpResult => {
 
-            console.log('YELP from API of YELP 🔴', yelpResult.body.businesses, '🔴');
 
             if (!yelpResult.body.businesses.length) { throw 'NO DATA'; }
             else {
@@ -322,7 +307,6 @@ function getYelps(request, response) {
                 sqlInfo.values = Object.values(yelp);
 
                 saveDataToDB(sqlInfo);
-                // console.log('🔴', yelp);
 
                 return yelp;
               });
